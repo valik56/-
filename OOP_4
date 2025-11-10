@@ -158,3 +158,193 @@ public class CheckingAccount extends Account {
 
 
 
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.mycompany.matissedemo;
+
+/**
+ *
+ * @author user
+ */
+import java.util.ArrayList;
+import java.util.List;
+
+public class Customer {
+    private final String firstName;
+    private final String lastName;
+    private final List<Account> accounts = new ArrayList<>();
+
+    public Customer(String firstName, String lastName) {
+        this.firstName = firstName.trim();
+        this.lastName = lastName.trim();
+    }
+
+    public String getFirstName() { return firstName; }
+    public String getLastName() { return lastName; }
+
+    public void addAccount(Account a) { accounts.add(a); }
+
+    public Account getAccount(int index) {
+        if (index < 0 || index >= accounts.size()) return null;
+        return accounts.get(index);
+    }
+
+    public int getNumberOfAccounts() { return accounts.size(); }
+
+    public List<Account> getAccounts() { return accounts; }
+
+    @Override
+    public String toString() {
+        return firstName + " " + lastName;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.mycompany.matissedemo;
+
+/**
+ *
+ * @author user
+ */
+public class CustomerReport {
+    public String generateReport() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("CUSTOMERS REPORT\n");
+        sb.append("===============================\n");
+        for (int i = 0; i < Bank.getNumOfCustomers(); i++) {
+            Customer c = Bank.getCustomer(i);
+            sb.append(String.format("%d) %s\n", i + 1, c.toString()));
+            for (int j = 0; j < c.getNumberOfAccounts(); j++) {
+                Account a = c.getAccount(j);
+                sb.append(String.format("    #%d - %s\n", j, a.toString()));
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.mycompany.matissedemo;
+
+/**
+ *
+ * @author user
+ */
+import java.io.*;
+import java.util.*;
+
+public class DataSource {
+    private final String filename;
+
+    public DataSource(String filename) {
+        this.filename = filename;
+    }
+
+    public void loadData() {
+        Bank.clear();
+        File f = new File(filename);
+        if (!f.exists()) {
+            System.out.println("Data file not found: " + filename + "  — using default sample data.");
+            loadSampleData();
+            return;
+        }
+        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) continue;
+                // expected: First,Last,Type,Balance,Extra?
+                String[] parts = line.split(",");
+                if (parts.length < 4) continue;
+                String first = parts[0].trim();
+                String last = parts[1].trim();
+                String type = parts[2].trim();
+                double balance = Double.parseDouble(parts[3].trim());
+                Customer c = Bank.addOrGetCustomer(first, last);
+                if (type.equalsIgnoreCase("C")) {
+                    double overdraft = 0.0;
+                    if (parts.length >= 5) {
+                        try { overdraft = Double.parseDouble(parts[4].trim()); } catch (Exception ex) {}
+                    }
+                    c.addAccount(new CheckingAccount(balance, overdraft));
+                } else { // assume Savings
+                    double rate = 0.0;
+                    if (parts.length >= 5) {
+                        try { rate = Double.parseDouble(parts[4].trim()); } catch (Exception ex) {}
+                    }
+                    c.addAccount(new SavingsAccount(balance, rate));
+                }
+            }
+            System.out.println("Loaded data from " + filename + " (" + Bank.getNumOfCustomers() + " customers).");
+        } catch (IOException e) {
+            e.printStackTrace();
+            loadSampleData();
+        }
+    }
+
+    private void loadSampleData() {
+        // fallback sample
+        Customer c1 = Bank.addOrGetCustomer("John", "Doe");
+        c1.addAccount(new CheckingAccount(1500, 200));
+        c1.addAccount(new SavingsAccount(1000, 5));
+
+        Customer c2 = Bank.addOrGetCustomer("Jane", "Smith");
+        c2.addAccount(new CheckingAccount(800, 100));
+
+        Customer c3 = Bank.addOrGetCustomer("Bob", "Brown");
+        c3.addAccount(new SavingsAccount(1200, 3));
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
